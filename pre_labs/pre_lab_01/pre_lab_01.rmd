@@ -242,3 +242,11 @@ No code here; I want you to provide three questions that this data suggests to y
 2.  How many students of each year are in each course?
 
 3.  Do departments with higher seat counts get more money from the university?
+
+
+
+
+
+
+
+
