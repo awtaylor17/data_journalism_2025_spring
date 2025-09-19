@@ -1,0 +1,127 @@
+---
+title: "lab_02"
+author: "Derek Willis"
+date: "2025-01-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries and establish settings
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load the tidyverse. If you have not installed the tidyverse already, remove the # from the next line and run it first.  
+# install.packages('tidyverse')
+library(tidyverse)
+library(lubridate)
+```
+
+## Load Data
+
+Let's keep working with the UMD courses and Maryland campaign expense data we used in the pre_lab.
+
+```{r}
+umd_courses <- read_rds("data/umd_courses.rds")
+maryland_expenses <- read_csv("data/maryland_expenses.csv")
+```
+
+## Answer questions
+
+**Q1.** How many departments have offered the courses with "Climate" in the title and at least one seat? Which department has offered the most? **A1.** 32 departments have offered courses with "Climate" in the title. The Atmospheric and Oceanic Science department has offered the most. 
+
+```{r}
+umd_courses |> 
+  filter(str_detect(title, "Climate") & seats >= 1) |> 
+  group_by(department) |>
+  summarise(climate_courses = n()) |> 
+  arrange(desc(climate_courses))
+
+```
+
+**Q2.** Of the departments listed in A1, which one is the most interesting to you, and why? **A2.** I'm most interested in the finance department. I didn't expect it to have any courses on climate. I didn't think it was something they taught about in the business school, though maybe they use the word "Climate" in a different sense than the environmental science departments do. It is also higher on the list, which also surprised me. 
+
+**Q3** Which departments offered the most courses in the Fall 2024 term? And which departments in that term have at least one syllabus posted? Answer both of those questions and then compare the top five departments - how are they different?
+
+**A3.** The top five departments that offered the most courses in the Fall 2024 term are: Business and Management, School of Music, Information Studies, English and Teaching and Learning, Policy and Leadership. The top five departments in the Fall 2024 term that have at least one syllabus posted are: Business and Management, Economics, School of Music, Information Studies and Engineering, Professional Masters.
+
+Business and Management stayed at first place, while Economics, which wasn't even the top ten originally, came in second. Overall, the total number of courses listed went down, which is to be expected. Business and Management was the only department to stay above 100 courses, the rest, even if they were in the top five initially, dropped to the 50's and 40's. 
+
+
+```{r}
+# Which departments offered the most courses in the Fall 2024 term?
+umd_courses |>
+  filter(term == 202408) |>
+  group_by(department) |> 
+  summarise(fall24_courses = n()) |> 
+  arrange(desc(fall24_courses))
+
+# Which departments in that term have at least one syllabus posted?
+umd_courses |>
+  filter(term == 202408 & syllabus_count >= 1) |> 
+  group_by(department) |> 
+  summarise(fall24_courses_syllabus = n()) |> 
+  arrange(desc(fall24_courses_syllabus))
+
+```
+
+**Q4.** Using the Maryland campaign expenses data, change the datatype of the expenditure_date column so that it is a date and not a chr, saving the result as a new dataframe. Then create a new column for the month based on expenditure_date. Then write code that shows total amount spent each month by Wes Moore's committee (you'll need to search the data to find the exact name, and we're not looking in payee_name). Write a sentence describing the pattern of spending over time. **A4.** For the most part and with a few exceptions, spending increases each month, with the most money being spent during October (the month before the election) and the summer before the election. 
+
+
+```{r}
+# Using the Maryland campaign expenses data, change the datatype of the expenditure_date column so that it is a date and not a chr, saving the result as a new dataframe. Then create a new column for the month based on expenditure_date.
+
+maryland_expenses_ymd <- maryland_expenses |> 
+  mutate(expenditure_date = mdy(expenditure_date)) |>
+  mutate(month = floor_date(expenditure_date, "month"))
+
+# Then write code that shows total amount spent each month by Wes Moore's committee
+
+maryland_expenses_ymd |> 
+  filter(committee_name == "Moore  Wes For Maryland") |> 
+  group_by(month) |>
+  summarise(moore_monthly_amount = sum(amount)) |> 
+  arrange(desc(moore_monthly_amount))
+
+```
+
+**Q5.** Using case_when(), create a column in the Maryland expenses data called `spending_location` indicating whether each record spent money in Maryland or outside Maryland. For records that are in Maryland, make the new column's value "In-state" and for all others, make it "Out of state". Then write code that shows the total amount of money spent in each category and describe the results. You can do this in one statement or break it up into two statements (saving the new column to your dataframe). **A5** The amount of money spent in Maryland was $77,723,146, while the amount of money spent out of state was $51,565,601. This result makes sense to me because you would expect Maryland campaigns to spend money in Maryland. 
+
+```{r}
+# Using case_when(), create a column in the Maryland expenses data called `spending_location` indicating whether each record spent money in Maryland or outside Maryland. For records that are in Maryland, make the new column's value "In-state" and for all others, make it "Out of state".
+
+md_expenses_location <- maryland_expenses |>
+  mutate(
+    spending_location = case_when(
+        str_detect(address, " Maryland ") ~ "In-state",
+        .default = "Out of state"
+      )
+  )
+
+# Then write code that shows the total amount of money spent in each category and describe the results.
+md_expenses_location |> 
+  group_by(spending_location) |> 
+  summarise(spending = sum(amount, na.rm = TRUE))
+
+# NOTE: I used ChatGPT to help me with this question. When I ran this code without "na.rm = TRUE," the amount for Out of state was NA, which did not make sense to me. I asked ChatGPT why this was and it gave me that code to include at the end of my sum() function.
+
+
+
+```
+
+**Q6.** Choose your own adventure: using either the UMD courses or campaign expenses data, ask and answer a question that is different than the previous ones. You can use one of the ones you provided in the pre_lab. **A6.**
+
+Question: How much money did Facebook receive from Maryland campaign committees?
+Answer: $291,349.3	
+
+
+```{r}
+maryland_expenses |>
+  mutate(payee_name = str_to_upper(payee_name)) |> 
+  filter(payee_name == "FACEBOOK") |> 
+  summarise(sum(amount))
+```
