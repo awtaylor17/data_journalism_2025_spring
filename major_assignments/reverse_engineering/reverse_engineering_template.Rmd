@@ -1,6 +1,6 @@
 ---
 title: "Reverse Engineering Project"
-author: "Student names here"
+author: "Alex Taylor, Jordan Fine, Devin Etta"
 date: "Date here"
 output:
   html_document:
@@ -25,6 +25,9 @@ In this notebook, we are reverse engineering the story, [STORY NAME](STORY URL)
 Loading required libraries for this analysis.
 
 ```{r echo=FALSE, message=FALSE}
+library(tidyverse)
+library(janitor)
+library(lubridate)
 
 ```
 
@@ -34,13 +37,23 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 ```{r}
 # Load required data
+Donations <- read_csv("data/sports-political-donations.csv")
 
-# Path to data should be loaded from folder "data" i.e. read_csv("data/name_of_data.csv")
+
 
 # Clean required data and prepare for analysis if needed. 
 
 
 ```
+
+
+###################################################################################
+
+For this checkpoint, we submitted our sentences in a Google Doc. We have only loaded the data in this notebook. 
+
+###################################################################################
+
+
 
 ## Sentences to Engineer
 In this notebook, we are reverse engineering five sentences from the story.
