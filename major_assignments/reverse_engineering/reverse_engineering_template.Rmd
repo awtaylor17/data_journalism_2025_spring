@@ -110,6 +110,7 @@ WNBA_Contribs <- WNBA_Contribs |>
 # Display results of code below this codeblock
 WNBA_Contribs
 
+
 ```
 
 ### Sentence 3 - Devin (Did 5th sentance in document)
@@ -151,15 +152,63 @@ top_40donations
 ```
 
 
-### Sentence 4
+### Sentence 4 - Alex
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: Of the 160 owners and commissioners in ESPN’s database, 74 contributed a majority of their publicly searchable funds to Republican campaigns, with 48 donating a majority to Democrats and the rest sending most of their money to causes that aren’t fully aligned with either party.
+
+* **Analysis summary**: I was able to confirm that 48 owners donated the majority of their funds to Democrats, however, I was not able to confirm that 74 owners contributed the majority of their funds to Republican campaigns. This is because, in my analysis, 70 owners contributed the majority of their funding to Republicans. This four owner difference could be, in part, because the number of owners in the dataset we have is 158, while the article stated that it's datebase has 160 owners in it. 
 
 ```{r}
 # Put code to reverse engineer sentence here
 
+# Turn the amount column into a numeric type, instead of a character
+Donations_AmountClean <- Donations |>
+  mutate(Amount = str_replace_all(Amount, "\\$", ""),
+         Amount = str_replace_all(Amount, "\\,", ""),
+         Amount = as.numeric(Amount)
+         )
+# Create a dataframe that lists the owners, which party they donatated to, and how much they donated to that party
+Owners_PartyDons <- Donations_AmountClean |>
+  group_by(Owner, Party) |>
+  summarise(Contrib = sum(Amount))
+
+# Add a column with the total amount each owner donated
+
+      # Create a dataframe with the total amount each owner donated
+      Owner_Total <- Donations_AmountClean |>
+        group_by(Owner) |>
+        summarise(Owner_Total = sum(Amount))
+      
+      # Join that dataframe to the first dataframe (that has the list of owners and party donations)
+      Owners_PartyDons <- Owners_PartyDons |>
+        left_join(Owner_Total)
+
+# Create a column listing what percent each owner donated to each party
+
+Owners_PartyDons <- Owners_PartyDons |>
+  mutate(
+    Pct_Don = (Contrib / Owner_Total) * 100
+  )
+
+# Find out how many owners contributed the majority of their funds to Republican campaigns
+
+Majority_Rep <- Owners_PartyDons |>
+  filter(Party == "Republican" & Pct_Don > 50)
+
+# Find out how many owners contributed the majority of their funds to Democratic campaigns
+
+Majority_Dem <- Owners_PartyDons |>
+  filter(Party == "Democrat" & Pct_Don > 50)
+
 # Display results of code below this codeblock
+
+nrow(Majority_Rep)
+nrow(Majority_Dem)
+nrow(
+  Donations |>
+    group_by(Owner) |>
+    summarise(count = n())
+)
 
 ```
 
