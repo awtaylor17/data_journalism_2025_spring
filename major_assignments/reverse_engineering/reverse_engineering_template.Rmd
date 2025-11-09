@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction 
 
-In this notebook, we are reverse engineering the story, [STORY NAME](STORY URL)
+In this notebook, we are reverse engineering the story, Inside The Political Donation History Of Wealthy Sports Owners(https://fivethirtyeight.com/features/inside-the-political-donation-history-of-wealthy-sports-owners/)
 
 ## Load libraries
 
@@ -33,7 +33,9 @@ library(lubridate)
 
 ## Load and Cleaning Data
 
-In this section, describe the source of the data, write a basic data dictionary for data you are working with, and discuss any caveats or issues you discovered working with this data. 
+In this section, describe the source of the data, write a basic data dictionary for data you are working with, and discuss any caveats or issues you discovered working with this data.
+
+This data was obtained from campaign finance reports from the Federal Elections Commission. It contains every instance of an NBA, NFL, NHL, WNBA, MLB and NASCAR owner or commissioner donating to a political campaign in the 2016, 2018 and 2020 election cycles. It also contains the amount of the donations, the recipient and what party the recipient belongs to. One annoying part of the data is that the "Amount" column is a character data type and not a numeric data type, which means we can not do math with it without converting it to a numeric. 
 
 ```{r}
 # Load required data
@@ -63,26 +65,30 @@ In this notebook, we are reverse engineering five sentences from the story.
 
 
 ```{r}
-# First, I am making two new data tables that will show me democratic and republican donors separately. I want to see who is donating the most, to which team, and in which party. 
+# Split dataset by party
+republican_donors <- sports_donations |> filter(party == "Republican")
+democrat_donors   <- sports_donations |> filter(party == "Democrat")
 
-republican_donors <- sports_donations |>
-  filter(party == "Republican")
-
-democrat_donors <- sports_donations |>
-  filter(party == "Democrat")
-#Now I have two more datasets that show me who is donating and which party they are in.I notice that there are significantly more observations in the republican dataset. This makes sense because significantly more people donated. 
-
-#I am now writing code to find out how much money each party received in total, and even the average donation amount, I can also look at how many donors gave to each party.
-
-sports_donations |>
+# Calculate totals, averages, and counts for each party
+party_summary <- sports_donations |>
   group_by(party) |>
   summarize(
     total_donated = sum(amount, na.rm = TRUE),
     average_donation = mean(amount, na.rm = TRUE),
     number_of_donors = n()
-  ) |>
-  arrange(desc(total_donated))
-#This data is telling me the average donation amounts for each political party, that is pretty cool! The data isn't all that surprising, seeing as Republicans donated the most. I do find it interesting that the number of doners doesn't exactly mirror the total amount donated. 
+  )
+
+# Calculate percentages of total donations
+total_all <- sum(party_summary$total_donated)
+party_summary <- party_summary |>
+  mutate(percent_of_total = (total_donated / total_all) * 100)
+
+# Arrange from highest to lowest total donated
+party_summary <- party_summary |> arrange(desc(total_donated))
+
+party_summary
+
+ 
 
 ```
 
@@ -212,16 +218,27 @@ nrow(
 
 ```
 
-### Sentence 5
+### Sentence 5 - Jordan
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: “Forty owners account for more than $40 million — more than 85 percent of all contributions. And looking specifically at these big spenders, it’s clear where their allegiances lie: 77.7 percent of that $40 million went to Republican causes or candidates, with 18.8 percent going to Democrats.” 
+* **Analysis summary**:This paragraph displays a statistic that slices the data and looks at the top donors. The github data from the article helps to list the owners and their sport teams that have a concentrated spending power. The analysis could be easy by just filtering the minimum spending amount to only display those donors. Either the data can be grouped by donations, or just the owners. 
+
+
+
 
 ```{r}
-# Put code to reverse engineer sentence here
-
-# Display results of code below this codeblock
-
+owner_totals <- sports_donations |> 
+  group_by(owner) |> 
+  summarize(total_donated = sum(amount, na.rm = TRUE)) |> 
+  arrange(desc(total_donated))
+top40_owners <- owner_totals |> 
+  slice_max(order_by = total_donated, n = 40)
+sports_donations |> 
+  semi_join(top40_owners, by = "owner") |> 
+  group_by(party) |> 
+  summarize(
+    total_donated = sum(amount, na.rm = TRUE),
+    percent = total_donated / sum(total_donated) * 100
+  )
 ```
-
 -30-
