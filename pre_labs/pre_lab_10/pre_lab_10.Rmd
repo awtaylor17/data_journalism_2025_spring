@@ -205,8 +205,9 @@ county_centroids <- st_centroid(zip_codes_with_foreclosures)
 
 ggplot() +
   geom_sf(data=zip_codes_with_foreclosures, aes(fill=march_2023)) +
-  scale_colour_viridis_b(option="magma") +
+  #scale_colour_viridis_b(option="magma") +
   theme_minimal()
+
 ```
 
 With these changes, what can we make out here? First, you can pretty easily spot zip codes with a high number of foreclosures - in Prince George's County in particular, along with zip codes around Baltimore and in places in the northeast and northwest parts of the state.
